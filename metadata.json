@@ -1,0 +1,6 @@
+{
+  "name": "VPS Control Panel",
+  "description": "Modern Persian RTL VPS management dashboard with interactive terminal, real-time resource monitors, file manager, and Python & Node.js project controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
