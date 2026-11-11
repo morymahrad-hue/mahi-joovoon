@@ -38,10 +38,19 @@ export const ConfigGeneratorView: React.FC = () => {
   const [durationDays, setDurationDays] = useState<number>(30);
   const [maxDevices, setMaxDevices] = useState<number>(2);
 
-  // Advanced overrides
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Advanced overrides & Iran Anti-Censorship Tuning
+  const [showAdvanced, setShowAdvanced] = useState(true);
   const [customUuid, setCustomUuid] = useState(generateUUID());
   const [customPassword, setCustomPassword] = useState(generatePassword(16));
+  const [fragmentEnabled, setFragmentEnabled] = useState(true);
+  const [fragmentPackets, setFragmentPackets] = useState('tlshello');
+  const [fragmentLength, setFragmentLength] = useState('100-200');
+  const [fragmentInterval, setFragmentInterval] = useState('10-20');
+  const [muxEnabled, setMuxEnabled] = useState(false);
+  const [muxConcurrency, setMuxConcurrency] = useState(8);
+  const [fingerprint, setFingerprint] = useState('chrome');
+  const [alpn, setAlpn] = useState('h2,http/1.1');
+  const [presetMode, setPresetMode] = useState<'mci' | 'irancell' | 'gaming' | 'custom'>('mci');
 
   // Generated config result
   const [generatedConfig, setGeneratedConfig] = useState<VPNConfig | null>(null);
@@ -101,6 +110,18 @@ export const ConfigGeneratorView: React.FC = () => {
       maxDevices: Number(maxDevices) || 2,
       customUuid: selectedProtocol === 'vless' || selectedProtocol === 'vmess' ? customUuid : undefined,
       customPassword: selectedProtocol === 'trojan' || selectedProtocol === 'shadowsocks' ? customPassword : undefined,
+      fingerprint,
+      alpn,
+      fragment: {
+        enabled: fragmentEnabled,
+        packets: fragmentPackets,
+        length: fragmentLength,
+        interval: fragmentInterval,
+      },
+      mux: {
+        enabled: muxEnabled,
+        concurrency: Number(muxConcurrency) || 8,
+      },
     });
 
     // Generate QR Code
@@ -347,57 +368,261 @@ export const ConfigGeneratorView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 cursor-pointer"
+                className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center justify-between w-full cursor-pointer py-1"
               >
-                <span>{showAdvanced ? (isFa ? '▲ بستن تنظیمات پیشرفته شبکه' : '▲ Hide Advanced') : (isFa ? '▼ تنظیمات پیشرفته (Transport, TLS, Flow, UUID)' : '▼ Show Advanced Settings')}</span>
+                <span className="flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isFa ? 'تنظیمات پیشرفته دور زدن فیلترینگ ایران (Fragment, Mux, uTLS)' : 'Advanced Anti-Censorship (Fragment, Mux, uTLS)'}</span>
+                </span>
+                <span className="text-[11px] text-zinc-500 font-mono">{showAdvanced ? '▲ بستن' : '▼ باز کردن و تنظیم'}</span>
               </button>
 
               {showAdvanced && (
-                <div className="mt-3 p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-3 animate-in fade-in">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="mt-3 p-4 rounded-xl bg-zinc-900/95 border border-amber-500/20 space-y-4 animate-in fade-in text-xs">
+                  {/* Preset Selector */}
+                  <div>
+                    <label className="block text-[11px] text-zinc-400 mb-1.5 font-bold">
+                      {isFa ? 'پریست‌های آماده بر اساس اپراتور سیم‌کارت:' : 'Quick Operator Presets:'}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPresetMode('mci');
+                          setFragmentEnabled(true);
+                          setFragmentPackets('tlshello');
+                          setFragmentLength('100-200');
+                          setFragmentInterval('10-20');
+                          setFingerprint('chrome');
+                          setAlpn('h2,http/1.1');
+                          setMuxEnabled(false);
+                          addToast('پریست بهینه‌شده ویژه همراه اول اعمال شد', 'info');
+                        }}
+                        className={`p-2 rounded-lg border text-right transition-all cursor-pointer ${
+                          presetMode === 'mci'
+                            ? 'bg-amber-400/20 border-amber-400/40 text-amber-200 font-bold'
+                            : 'bg-black/60 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <div className="text-[11px] font-bold">📱 همراه اول (MCI)</div>
+                        <div className="text-[9px] text-zinc-500 font-mono">Fragment 100-200</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPresetMode('irancell');
+                          setFragmentEnabled(true);
+                          setFragmentPackets('tlshello');
+                          setFragmentLength('50-100');
+                          setFragmentInterval('10-15');
+                          setFingerprint('chrome');
+                          setAlpn('h2,http/1.1');
+                          setMuxEnabled(false);
+                          addToast('پریست بهینه‌شده ویژه ایرانسل اعمال شد', 'info');
+                        }}
+                        className={`p-2 rounded-lg border text-right transition-all cursor-pointer ${
+                          presetMode === 'irancell'
+                            ? 'bg-amber-400/20 border-amber-400/40 text-amber-200 font-bold'
+                            : 'bg-black/60 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <div className="text-[11px] font-bold">📱 ایرانسل (MTN)</div>
+                        <div className="text-[9px] text-zinc-500 font-mono">Fragment 50-100</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPresetMode('gaming');
+                          setFragmentEnabled(false);
+                          setMuxEnabled(true);
+                          setMuxConcurrency(8);
+                          setFingerprint('chrome');
+                          setAlpn('h2');
+                          addToast('پریست گیمینگ و کاهش تاخیر پینگ اعمال شد', 'info');
+                        }}
+                        className={`p-2 rounded-lg border text-right transition-all cursor-pointer ${
+                          presetMode === 'gaming'
+                            ? 'bg-amber-400/20 border-amber-400/40 text-amber-200 font-bold'
+                            : 'bg-black/60 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <div className="text-[11px] font-bold">⚡ پینگ پایین / گیم</div>
+                        <div className="text-[9px] text-zinc-500 font-mono">Mux Concurrency 8</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPresetMode('custom')}
+                        className={`p-2 rounded-lg border text-right transition-all cursor-pointer ${
+                          presetMode === 'custom'
+                            ? 'bg-amber-400/20 border-amber-400/40 text-amber-200 font-bold'
+                            : 'bg-black/60 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <div className="text-[11px] font-bold">🛠 سفارشی دستی</div>
+                        <div className="text-[9px] text-zinc-500 font-mono">Custom Tuning</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Section: Fragmenting Feature */}
+                  <div className="p-3 rounded-xl bg-black/60 border border-zinc-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span className="font-bold text-white text-[11px]">
+                          تکه‌تکه کردن پکت هندشیک (Fragment Anti-DPI)
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={fragmentEnabled}
+                          onChange={(e) => setFragmentEnabled(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-400"></div>
+                      </label>
+                    </div>
+
+                    {fragmentEnabled && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-zinc-800/60">
+                        <div>
+                          <label className="block text-[10px] text-zinc-400 mb-1">نوع پکت‌ها (Packets):</label>
+                          <select
+                            value={fragmentPackets}
+                            onChange={(e) => setFragmentPackets(e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
+                          >
+                            <option value="tlshello">tlshello (توصیه اکید)</option>
+                            <option value="1-3">1-3 (۳ پکت اول)</option>
+                            <option value="all">all (تمام بسته‌ها)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-zinc-400 mb-1">طول قطعات (Length):</label>
+                          <input
+                            type="text"
+                            value={fragmentLength}
+                            onChange={(e) => setFragmentLength(e.target.value)}
+                            placeholder="100-200"
+                            className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-amber-300 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-zinc-400 mb-1">فاصله زمانی (Interval ms):</label>
+                          <input
+                            type="text"
+                            value={fragmentInterval}
+                            onChange={(e) => setFragmentInterval(e.target.value)}
+                            placeholder="10-20"
+                            className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-amber-300 font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Section: Mux Multiplexing */}
+                  <div className="p-3 rounded-xl bg-black/60 border border-zinc-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                        <span className="font-bold text-white text-[11px]">
+                          مالتی‌پلکسینگ (Multiplexing / Mux)
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={muxEnabled}
+                          onChange={(e) => setMuxEnabled(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                      </label>
+                    </div>
+
+                    {muxEnabled && (
+                      <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
+                        <span className="text-[10px] text-zinc-400">تعداد اتصالات هم‌زمان (Concurrency):</span>
+                        <select
+                          value={muxConcurrency}
+                          onChange={(e) => setMuxConcurrency(Number(e.target.value))}
+                          className="px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs text-cyan-300 font-mono"
+                        >
+                          <option value={4}>4 Streams</option>
+                          <option value={8}>8 Streams (استاندارد)</option>
+                          <option value={16}>16 Streams (فوق‌سریع)</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Section: TLS, Fingerprint & Flow */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                     <div>
-                      <label className="block text-[11px] text-zinc-400 mb-1">شبکه انتقال (Transport):</label>
+                      <label className="block text-[10px] text-zinc-400 mb-1">فینگرپرینت (uTLS):</label>
+                      <select
+                        value={fingerprint}
+                        onChange={(e) => setFingerprint(e.target.value)}
+                        className="w-full px-2 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
+                      >
+                        <option value="chrome">Chrome (گوگل کروم)</option>
+                        <option value="ios">iOS (آیفون سافاری)</option>
+                        <option value="firefox">Firefox (فایرفاکس)</option>
+                        <option value="safari">Safari (مک)</option>
+                        <option value="random">Randomized</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 mb-1">مذاکره ALPN:</label>
+                      <select
+                        value={alpn}
+                        onChange={(e) => setAlpn(e.target.value)}
+                        className="w-full px-2 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
+                      >
+                        <option value="h2,http/1.1">h2,http/1.1 (ترکیبی)</option>
+                        <option value="http/1.1">http/1.1 (پایدار)</option>
+                        <option value="h2">h2 (فقط HTTP/2)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 mb-1">شبکه انتقال (Transport):</label>
                       <select
                         value={transport}
                         onChange={(e) => setTransport(e.target.value as VPNTransport)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
+                        className="w-full px-2 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
                       >
-                        <option value="tcp">TCP (پیش‌فرض Reality)</option>
-                        <option value="ws">WebSocket (WS)</option>
+                        <option value="ws">WebSocket (WS - پیشنهادی)</option>
+                        <option value="tcp">TCP (Reality)</option>
                         <option value="grpc">gRPC (Gun / Multi)</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] text-zinc-400 mb-1">امنیت رمزنگاری (TLS):</label>
+                      <label className="block text-[10px] text-zinc-400 mb-1">امنیت (TLS):</label>
                       <select
                         value={tls}
                         onChange={(e) => setTls(e.target.value as VPNTLS)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
+                        className="w-full px-2 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
                       >
-                        <option value="reality">Reality (توصیه شده)</option>
-                        <option value="tls">Standard TLS</option>
+                        <option value="tls">Standard TLS (پورت 443)</option>
+                        <option value="reality">Reality (Vision)</option>
                         <option value="none">بدون TLS (ساده)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] text-zinc-400 mb-1">کنترل جریان (Flow):</label>
-                      <select
-                        value={flow}
-                        onChange={(e) => setFlow(e.target.value as VPNFlow)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-black border border-zinc-800 text-xs text-white"
-                      >
-                        <option value="xtls-rprx-vision">xtls-rprx-vision (Vision)</option>
-                        <option value="none">بدون Flow (None)</option>
                       </select>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  {/* UUID & Password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-zinc-800">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] text-zinc-400 font-mono">شناسه کاربری (UUID):</label>
+                        <label className="text-[10px] text-zinc-400 font-mono">شناسه کاربری (UUID):</label>
                         <button
                           type="button"
                           onClick={() => setCustomUuid(generateUUID())}
@@ -416,7 +641,7 @@ export const ConfigGeneratorView: React.FC = () => {
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] text-zinc-400 font-mono">گذرواژه امن (Password):</label>
+                        <label className="text-[10px] text-zinc-400 font-mono">گذرواژه امن (Password):</label>
                         <button
                           type="button"
                           onClick={() => setCustomPassword(generatePassword(16))}
@@ -542,19 +767,29 @@ export const ConfigGeneratorView: React.FC = () => {
                   {exportTab === 'link' && (
                     <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-1.5 font-mono">
                       <div className="flex justify-between">
-                        <span className="text-zinc-400">سرور:</span>
+                        <span className="text-zinc-400 font-sans">سرور:</span>
                         <span className="text-white font-bold">{generatedConfig.serverName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-zinc-400">پروتکل / پورت:</span>
+                        <span className="text-zinc-400 font-sans">پروتکل / پورت:</span>
                         <span className="text-amber-300">{generatedConfig.protocol.toUpperCase()} : {generatedConfig.port}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-zinc-400">رمزنگاری:</span>
+                        <span className="text-zinc-400 font-sans">رمزنگاری:</span>
                         <span className="text-emerald-400">{generatedConfig.tls.toUpperCase()} ({generatedConfig.transport})</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-zinc-400">سقف حجم / اعتبار:</span>
+                        <span className="text-zinc-400 font-sans">فینگرپرینت uTLS:</span>
+                        <span className="text-amber-300 font-bold">{generatedConfig.fingerprint || 'chrome'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-400 font-sans">وضعیت Fragment:</span>
+                        <span className="text-emerald-400 font-bold">
+                          {generatedConfig.fragment?.enabled ? `فعال (${generatedConfig.fragment.length}, ${generatedConfig.fragment.interval}ms)` : 'غیرفعال'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-400 font-sans">سقف حجم / اعتبار:</span>
                         <span className="text-zinc-200">{generatedConfig.dataLimitGB} GB ({durationDays} روز)</span>
                       </div>
                     </div>

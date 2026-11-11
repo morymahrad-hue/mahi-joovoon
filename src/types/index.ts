@@ -80,6 +80,23 @@ export interface VPNConfig {
   status: 'active' | 'expired' | 'disabled' | 'limited';
   createdAt: string;
   rawLink: string;
+  fingerprint?: string;
+  alpn?: string;
+  fragment?: {
+    enabled: boolean;
+    packets: string;
+    length: string;
+    interval: string;
+  };
+  mux?: {
+    enabled: boolean;
+    concurrency: number;
+  };
+  noise?: {
+    enabled: boolean;
+    packets: string;
+    delay: string;
+  };
   clashYaml?: string;
   singboxJson?: string;
   xrayJson?: string;

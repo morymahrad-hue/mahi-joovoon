@@ -276,16 +276,17 @@ export function generateSingboxJson(config: VPNConfig): string {
       enabled: true,
       server_name: config.sni,
       insecure: false,
+      utls: {
+        enabled: true,
+        fingerprint: config.fingerprint || 'chrome',
+      },
+      alpn: ['h2', 'http/1.1'],
     };
     if (config.tls === 'reality') {
       outbound.tls.reality = {
         enabled: true,
         public_key: config.publicKey || '',
         short_id: config.shortId || '',
-      };
-      outbound.tls.utls = {
-        enabled: true,
-        fingerprint: 'chrome',
       };
     }
   }
@@ -305,14 +306,24 @@ export function generateSingboxJson(config: VPNConfig): string {
     };
   }
 
+  // Fragment & Multiplexing in Sing-box
+  if (config.mux?.enabled) {
+    outbound.multiplex = {
+      enabled: true,
+      protocol: 'h2mux',
+      max_connections: config.mux.concurrency || 8,
+      min_streams: 4,
+    };
+  }
+
   return JSON.stringify(outbound, null, 2);
 }
 
 /**
- * Generate Xray core inbound / outbound json
+ * Generate Xray core inbound / outbound json with Fragment & Mux support
  */
 export function generateXrayJson(config: VPNConfig): string {
-  const xrayOutbound = {
+  const xrayOutbound: Record<string, any> = {
     protocol: config.protocol,
     settings: {
       vnext: config.protocol === 'vless' || config.protocol === 'vmess' ? [
@@ -341,13 +352,15 @@ export function generateXrayJson(config: VPNConfig): string {
       security: config.tls === 'reality' ? 'reality' : config.tls === 'tls' ? 'tls' : 'none',
       realitySettings: config.tls === 'reality' ? {
         serverName: config.sni,
-        fingerprint: 'chrome',
+        fingerprint: config.fingerprint || 'chrome',
         publicKey: config.publicKey || '',
         shortId: config.shortId || '',
       } : undefined,
       tlsSettings: config.tls === 'tls' ? {
         serverName: config.sni,
         allowInsecure: false,
+        fingerprint: config.fingerprint || 'chrome',
+        alpn: ['h2', 'http/1.1'],
       } : undefined,
       wsSettings: config.transport === 'ws' ? {
         path: config.wsPath,
@@ -358,6 +371,20 @@ export function generateXrayJson(config: VPNConfig): string {
       grpcSettings: config.transport === 'grpc' ? {
         serviceName: config.grpcService,
       } : undefined,
+      sockopt: {
+        tcpKeepAliveInterval: 15,
+        ...(config.fragment?.enabled ? {
+          fragment: {
+            packets: config.fragment.packets || 'tlshello',
+            length: config.fragment.length || '100-200',
+            interval: config.fragment.interval || '10-20',
+          },
+        } : {}),
+      },
+    },
+    mux: {
+      enabled: config.mux?.enabled ?? false,
+      concurrency: config.mux?.concurrency ?? 8,
     },
   };
 
@@ -382,6 +409,23 @@ export function buildFullConfig(
     maxDevices?: number;
     customUuid?: string;
     customPassword?: string;
+    fingerprint?: string;
+    alpn?: string;
+    fragment?: {
+      enabled: boolean;
+      packets: string;
+      length: string;
+      interval: string;
+    };
+    mux?: {
+      enabled: boolean;
+      concurrency: number;
+    };
+    noise?: {
+      enabled: boolean;
+      packets: string;
+      delay: string;
+    };
   }
 ): VPNConfig {
   const uuid = options.customUuid || generateUUID();
@@ -389,6 +433,8 @@ export function buildFullConfig(
   const transport = options.transport || 'ws';
   const tls = options.tls || 'tls';
   const flow = options.flow || (tls === 'reality' ? 'xtls-rprx-vision' : 'none');
+  const fingerprint = options.fingerprint || 'chrome';
+  const alpn = options.alpn || 'h2,http/1.1';
 
   let port = server.vlessPort;
   if (protocol === 'vmess') port = server.vmessPort;
@@ -476,6 +522,11 @@ export function buildFullConfig(
     status: 'active',
     createdAt: new Date().toISOString(),
     rawLink,
+    fingerprint,
+    alpn,
+    fragment: options.fragment,
+    mux: options.mux,
+    noise: options.noise,
   };
 
   configObj.clashYaml = generateClashYaml(configObj);
