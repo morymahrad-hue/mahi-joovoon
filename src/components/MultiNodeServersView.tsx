@@ -20,7 +20,16 @@ import { useServer } from '../context/ServerContext';
 import { VPNServerNode } from '../types';
 
 export const MultiNodeServersView: React.FC = () => {
-  const { vpnServers, addVPNServer, updateVPNServer, deleteVPNServer, addToast, language } = useServer();
+  const {
+    vpnServers,
+    addVPNServer,
+    updateVPNServer,
+    deleteVPNServer,
+    addToast,
+    language,
+    isSyncingGitHubNodes,
+    syncNodesFromGitHubPages,
+  } = useServer();
   const isFa = language === 'fa';
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -113,13 +122,25 @@ export const MultiNodeServersView: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 rounded-xl gold-gradient text-black font-bold text-xs flex items-center gap-2 shrink-0 shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>{isFa ? 'افزودن نود سرور جدید' : 'Add Edge Server'}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => syncNodesFromGitHubPages(true)}
+            disabled={isSyncingGitHubNodes}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-500/40 text-amber-200 hover:text-white font-bold text-xs flex items-center gap-2 shrink-0 shadow-lg cursor-pointer hover:border-amber-400 transition-all disabled:opacity-50"
+            title="دریافت نودها به صورت زنده از nodes.txt گیت‌هاب پیجز"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isSyncingGitHubNodes ? 'animate-spin' : ''}`} />
+            <span>{isFa ? 'همگام‌سازی نودها از GitHub Pages' : 'Sync Nodes from GitHub Pages'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 rounded-xl gold-gradient text-black font-bold text-xs flex items-center gap-2 shrink-0 shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>{isFa ? 'افزودن نود سرور جدید' : 'Add Edge Server'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Servers Grid */}

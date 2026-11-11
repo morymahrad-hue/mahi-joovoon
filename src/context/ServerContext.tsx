@@ -45,6 +45,7 @@ import {
   initialVPNSupportTickets,
   initialAdminStats,
 } from '../data/vpnData';
+import { parseNodesTxt } from '../utils/vpnConfigEngine';
 
 interface Toast {
   id: string;
@@ -197,6 +198,9 @@ interface ServerContextType {
   exportAllData: () => string;
   importAllData: (jsonString: string) => boolean;
   resetAllData: () => void;
+  // GitHub Pages Live Nodes Sync
+  isSyncingGitHubNodes: boolean;
+  syncNodesFromGitHubPages: (notify?: boolean) => Promise<{ success: boolean; count: number }>;
 }
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
@@ -294,6 +298,59 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     loadStorage(STORAGE_KEYS.TICKETS, initialVPNSupportTickets)
   );
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isSyncingGitHubNodes, setIsSyncingGitHubNodes] = useState<boolean>(false);
+
+  // Sync and populate live nodes from GitHub Pages (or local static fallback)
+  const syncNodesFromGitHubPages = async (notify = true): Promise<{ success: boolean; count: number }> => {
+    setIsSyncingGitHubNodes(true);
+    const candidates = [
+      'https://morymahrad-hue.github.io/mahi-joovoon/nodes.txt',
+      './nodes.txt',
+      'https://raw.githubusercontent.com/morymahrad-hue/mahi-joovoon/main/public/nodes.txt',
+    ];
+
+    let rawText = '';
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { cache: 'no-cache' });
+        if (res.ok) {
+          const text = await res.text();
+          if (text && (text.includes('vless://') || text.includes('trojan://') || text.includes('vmess://') || text.includes('ss://'))) {
+            rawText = text;
+            break;
+          }
+        }
+      } catch {
+        // try next fallback
+      }
+    }
+
+    if (!rawText) {
+      setIsSyncingGitHubNodes(false);
+      if (notify) addToast('خطا در دریافت لیست نودها از GitHub Pages. اتصال را بررسی نمایید.', 'error');
+      return { success: false, count: 0 };
+    }
+
+    const { configs, servers } = parseNodesTxt(rawText);
+    if (configs.length > 0) {
+      setVpnConfigs(configs);
+      if (servers.length > 0) {
+        setVpnServers(servers);
+      }
+      saveStorage(STORAGE_KEYS.CONFIGS, configs);
+      if (servers.length > 0) saveStorage(STORAGE_KEYS.SERVERS, servers);
+
+      if (notify) {
+        addToast(`همگام‌سازی موفق! ${configs.length} نود فعال با موفقیت از GitHub Pages دریافت و جایگذاری شدند.`, 'success');
+      }
+      setIsSyncingGitHubNodes(false);
+      return { success: true, count: configs.length };
+    } else {
+      setIsSyncingGitHubNodes(false);
+      if (notify) addToast('هیچ نود معتبری در فایل nodes.txt یافت نشد.', 'warning');
+      return { success: false, count: 0 };
+    }
+  };
 
   // Auto-sync state mutations to localStorage immediately
   useEffect(() => { saveStorage(STORAGE_KEYS.SERVERS, vpnServers); }, [vpnServers]);
@@ -452,6 +509,7 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     checkStatus();
     loadVPNData();
+    syncNodesFromGitHubPages(false);
   }, []);
 
   // VPN CRUD Handlers
@@ -1641,6 +1699,8 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         exportAllData,
         importAllData,
         resetAllData,
+        isSyncingGitHubNodes,
+        syncNodesFromGitHubPages,
       }}
     >
       {children}

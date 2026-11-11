@@ -59,6 +59,8 @@ export const SettingsView: React.FC = () => {
     vpnUsers,
     vpnConfigs,
     vpnServers,
+    isSyncingGitHubNodes,
+    syncNodesFromGitHubPages,
   } = useServer();
 
   // Tab within settings
@@ -1286,6 +1288,29 @@ export const SettingsView: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* GitHub Pages Direct Nodes Sync Banner */}
+          <div className="bg-gradient-to-r from-amber-500/15 via-zinc-900 to-black border border-amber-500/30 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Globe className="w-5 h-5 text-amber-400" />
+                <h4 className="text-sm font-bold text-white">همگام‌سازی و بارگذاری زنده نودها از GitHub Pages</h4>
+              </div>
+              <p className="text-xs text-slate-400">
+                دریافت مستقیم و زنده آخرین نودهای فعال از فایل <span className="text-amber-300 font-mono">nodes.txt</span> در گیت‌هاب پیجز و جایگذاری فوری در تمام بخش‌های پنل و کلاینت‌ها.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => syncNodesFromGitHubPages(true)}
+              disabled={isSyncingGitHubNodes}
+              className="px-4 py-2.5 rounded-xl gold-gradient text-black font-bold text-xs flex items-center gap-2 shrink-0 shadow-lg cursor-pointer hover:opacity-90 transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncingGitHubNodes ? 'animate-spin' : ''}`} />
+              <span>{isSyncingGitHubNodes ? 'در حال همگام‌سازی...' : 'همگام‌سازی و جایگذاری نودها 🔄'}</span>
+            </button>
           </div>
 
           {/* Backup Action Cards */}

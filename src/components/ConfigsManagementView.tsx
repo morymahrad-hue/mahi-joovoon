@@ -18,13 +18,23 @@ import {
   Eye,
   X,
   Zap,
+  RefreshCw,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useServer } from '../context/ServerContext';
 import { VPNConfig } from '../types';
 
 export const ConfigsManagementView: React.FC = () => {
-  const { vpnConfigs, deleteVPNConfig, updateVPNConfig, addToast, setActiveTab, language } = useServer();
+  const {
+    vpnConfigs,
+    deleteVPNConfig,
+    updateVPNConfig,
+    addToast,
+    setActiveTab,
+    language,
+    isSyncingGitHubNodes,
+    syncNodesFromGitHubPages,
+  } = useServer();
   const isFa = language === 'fa';
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -107,7 +117,17 @@ export const ConfigsManagementView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => syncNodesFromGitHubPages(true)}
+            disabled={isSyncingGitHubNodes}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-500/40 text-amber-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-lg cursor-pointer hover:border-amber-400 transition-all disabled:opacity-50"
+            title="دریافت زنده و به‌روزرسانی نودها از nodes.txt گیت‌هاب پیجز"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isSyncingGitHubNodes ? 'animate-spin' : ''}`} />
+            <span>{isFa ? 'همگام‌سازی از GitHub Pages' : 'Sync from GitHub Pages'}</span>
+          </button>
+
           <button
             onClick={() => {
               const activeLinks = vpnConfigs.filter((c) => c.status === 'active').map((c) => c.rawLink).join('\n');

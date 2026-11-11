@@ -28,7 +28,15 @@ import { useServer } from '../context/ServerContext';
 import { VPNUser } from '../types';
 
 export const SubscriptionsView: React.FC = () => {
-  const { vpnUsers, vpnConfigs, addToast, language, setActiveTab } = useServer();
+  const {
+    vpnUsers,
+    vpnConfigs,
+    addToast,
+    language,
+    setActiveTab,
+    isSyncingGitHubNodes,
+    syncNodesFromGitHubPages,
+  } = useServer();
   const isFa = language === 'fa';
 
   const [feedMode, setFeedMode] = useState<'github-auto' | 'user-dedicated'>('github-auto');
@@ -49,74 +57,37 @@ export const SubscriptionsView: React.FC = () => {
   const githubSubscriptionUrl = 'https://raw.githubusercontent.com/morymahrad-hue/mahi-joovoon/main/public/sub.txt';
   const githubPagesSubscriptionUrl = 'https://morymahrad-hue.github.io/mahi-joovoon/sub.txt';
 
-  const liveAutoNodes = [
-    {
-      id: 'node-de',
-      name: '🇩🇪 MAHI-JOOVOON | DE-Frankfurt Edge',
-      type: 'VLESS / WebSocket / TLS',
-      ip: '104.16.132.229:443',
-      sni: 'speedtest.net',
-      ping: '29ms',
-      badge: 'پایدارترین',
-      rawLink:
-        'vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@104.16.132.229:443?encryption=none&security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%A9%F0%9F%87%AA%20MAHI-JOOVOON%20%7C%20DE-Frankfurt%20Edge%20%E2%9A%A1',
-    },
-    {
-      id: 'node-nl',
-      name: '🇳🇱 MAHI-JOOVOON | NL-Amsterdam CDN',
-      type: 'VLESS / WebSocket / TLS',
-      ip: '172.67.182.196:443',
-      sni: 'cloudflare.com',
-      ping: '34ms',
-      badge: 'ضد فیلتر',
-      rawLink:
-        'vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@172.67.182.196:443?encryption=none&security=tls&sni=cloudflare.com&type=ws&host=cloudflare.com&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%B3%F0%9F%87%B1%20MAHI-JOOVOON%20%7C%20NL-Amsterdam%20CDN%20%E2%9A%A1',
-    },
-    {
-      id: 'node-fi',
-      name: '🇫🇮 MAHI-JOOVOON | FI-Helsinki Clean',
-      type: 'VLESS / WebSocket / TLS',
-      ip: '104.19.241.93:443',
-      sni: 'zula.ir',
-      ping: '38ms',
-      badge: 'Clean IP',
-      rawLink:
-        'vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@104.19.241.93:443?encryption=none&security=tls&sni=zula.ir&type=ws&host=zula.ir&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%AB%F0%9F%87%AE%20MAHI-JOOVOON%20%7C%20FI-Helsinki%20Clean%20%E2%9A%A1',
-    },
-    {
-      id: 'node-tr',
-      name: '🇹🇷 MAHI-JOOVOON | TR-Istanbul Gaming',
-      type: 'VLESS / WebSocket / TLS',
-      ip: '162.159.136.234:443',
-      sni: 'speedtest.net',
-      ping: '22ms',
-      badge: 'کمترین پینگ',
-      rawLink:
-        'vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@162.159.136.234:443?encryption=none&security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%B9%F0%9F%87%B7%20MAHI-JOOVOON%20%7C%20TR-Istanbul%20Game%20%E2%9A%A1',
-    },
-    {
-      id: 'node-us',
-      name: '🇺🇸 MAHI-JOOVOON | US-NewYork Stream',
-      type: 'VLESS / WebSocket / TLS',
-      ip: '104.18.2.161:443',
-      sni: 'apple.com',
-      ping: '108ms',
-      badge: 'آنبلاک ChatGPT',
-      rawLink:
-        'vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@104.18.2.161:443?encryption=none&security=tls&sni=apple.com&type=ws&host=apple.com&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%BA%F0%9F%87%B8%20MAHI-JOOVOON%20%7C%20US-NewYork%20Stream%20%E2%9A%A1',
-    },
-    {
-      id: 'node-trojan',
-      name: '👑 MAHI-JOOVOON | Trojan VIP Gold',
-      type: 'Trojan / WebSocket / TLS',
-      ip: '104.16.132.229:443',
-      sni: 'speedtest.net',
-      ping: '31ms',
-      badge: 'پروتکل اختصاصی',
-      rawLink:
-        'trojan://mahi_vip_pass_2026@104.16.132.229:443?security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%94%B0%20MAHI-JOOVOON%20%7C%20Trojan%20VIP%20%E2%9A%A1',
-    },
-  ];
+  // Dynamically populated from GitHub Pages / live configs
+  const liveAutoNodes = vpnConfigs.map((cfg, idx) => {
+    const name = cfg.name;
+    const isDE = name.includes('DE') || name.includes('🇩🇪');
+    const isNL = name.includes('NL') || name.includes('🇳🇱');
+    const isFI = name.includes('FI') || name.includes('🇫🇮');
+    const isTR = name.includes('TR') || name.includes('🇹🇷');
+    const isUS = name.includes('US') || name.includes('🇺🇸');
+    const isVIP = name.includes('👑') || cfg.protocol === 'trojan';
+
+    let badge = 'نود فعال';
+    let ping = '30ms';
+
+    if (isTR) { badge = 'کمترین پینگ'; ping = '22ms'; }
+    else if (isDE) { badge = 'پایدارترین'; ping = '29ms'; }
+    else if (isNL) { badge = 'ضد فیلتر'; ping = '34ms'; }
+    else if (isFI) { badge = 'Clean IP'; ping = '38ms'; }
+    else if (isUS) { badge = 'آنبلاک ChatGPT'; ping = '108ms'; }
+    else if (isVIP) { badge = 'پروتکل اختصاصی'; ping = '31ms'; }
+
+    return {
+      id: cfg.id || `node-${idx}`,
+      name: cfg.name,
+      type: `${cfg.protocol.toUpperCase()} / ${cfg.transport.toUpperCase()} / ${cfg.tls.toUpperCase()}`,
+      ip: cfg.sni || 'Anycast Clean IP',
+      sni: cfg.sni || 'speedtest.net',
+      ping,
+      badge,
+      rawLink: cfg.rawLink,
+    };
+  });
 
   // Generate QR for User Subscription
   useEffect(() => {
@@ -285,8 +256,19 @@ export const SubscriptionsView: React.FC = () => {
                   <span>کپی یکجای ۶ کانفیگ برای ویتوری</span>
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => syncNodesFromGitHubPages(true)}
+                  disabled={isSyncingGitHubNodes}
+                  className="py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/10 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                  title="دریافت زنده و جایگذاری نودها از nodes.txt گیت‌هاب پیجز"
+                >
+                  <RefreshCw className={`w-4 h-4 text-amber-400 ${isSyncingGitHubNodes ? 'animate-spin' : ''}`} />
+                  <span>{isFa ? 'همگام‌سازی از GitHub Pages' : 'Sync from GitHub Pages'}</span>
+                </button>
+
                 <a
-                  href={githubSubscriptionUrl}
+                  href={githubPagesSubscriptionUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors"

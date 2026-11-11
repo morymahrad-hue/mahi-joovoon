@@ -535,3 +535,261 @@ export function buildFullConfig(
 
   return configObj;
 }
+
+/**
+ * Parse an individual VPN URI (VLESS, Trojan, VMess, Shadowsocks)
+ * into a typed VPNConfig and VPNServerNode pair.
+ */
+export function parseVpnUri(
+  rawUri: string,
+  index = 0
+): { config: VPNConfig; server: VPNServerNode } | null {
+  const uri = rawUri.trim();
+  if (!uri || uri.startsWith('#') || uri.startsWith('//')) return null;
+
+  try {
+    let protocol: VPNProtocol = 'vless';
+    let host = '';
+    let port = 443;
+    let uuid = '';
+    let password = '';
+    let remark = `Node-${index + 1}`;
+    let transport: VPNTransport = 'ws';
+    let tls: VPNTLS = 'tls';
+    let sni = 'speedtest.net';
+    let wsPath = '/';
+    let grpcService = 'mahi-grpc';
+    let flow: VPNFlow = 'none';
+    let fingerprint = 'chrome';
+    let alpn = 'h2,http/1.1';
+    let publicKey = '';
+    let shortId = '';
+
+    if (uri.startsWith('vless://') || uri.startsWith('trojan://')) {
+      protocol = uri.startsWith('vless://') ? 'vless' : 'trojan';
+      const cleanUri = uri.replace(/^(vless|trojan):\/\//, '');
+
+      // Separate hash fragment (remark)
+      const hashSplit = cleanUri.split('#');
+      if (hashSplit.length > 1) {
+        try {
+          remark = decodeURIComponent(hashSplit.slice(1).join('#')).trim();
+        } catch {
+          remark = hashSplit.slice(1).join('#').trim();
+        }
+      }
+
+      // Separate query params
+      const querySplit = hashSplit[0].split('?');
+      const credsAndHost = querySplit[0];
+      const queryString = querySplit[1] || '';
+
+      const atSplit = credsAndHost.split('@');
+      if (atSplit.length === 2) {
+        if (protocol === 'vless') {
+          uuid = atSplit[0];
+        } else {
+          password = atSplit[0];
+        }
+        const hostPort = atSplit[1].split(':');
+        host = hostPort[0];
+        port = hostPort[1] ? parseInt(hostPort[1], 10) : 443;
+      } else {
+        host = credsAndHost;
+      }
+
+      const params = new URLSearchParams(queryString);
+      if (params.get('type') === 'grpc') transport = 'grpc';
+      else if (params.get('type') === 'tcp') transport = 'tcp';
+      else transport = 'ws';
+
+      const sec = params.get('security');
+      if (sec === 'reality') tls = 'reality';
+      else if (sec === 'none') tls = 'none';
+      else tls = 'tls';
+
+      sni = params.get('sni') || params.get('host') || host;
+      wsPath = params.get('path') ? decodeURIComponent(params.get('path')!) : '/';
+      grpcService = params.get('serviceName') || 'mahi-grpc';
+      flow = (params.get('flow') as VPNFlow) || 'none';
+      fingerprint = params.get('fp') || 'chrome';
+      alpn = params.get('alpn') ? decodeURIComponent(params.get('alpn')!) : 'h2,http/1.1';
+      publicKey = params.get('pbk') || '';
+      shortId = params.get('sid') || '';
+    } else if (uri.startsWith('vmess://')) {
+      protocol = 'vmess';
+      const b64 = uri.replace('vmess://', '').trim();
+      const decoded = typeof atob !== 'undefined'
+        ? atob(b64)
+        : Buffer.from(b64, 'base64').toString('utf-8');
+      const vobj = JSON.parse(decoded);
+      host = vobj.add;
+      port = parseInt(vobj.port || '443', 10);
+      uuid = vobj.id;
+      remark = vobj.ps || `VMess-${host}`;
+      transport = vobj.net === 'grpc' ? 'grpc' : vobj.net === 'tcp' ? 'tcp' : 'ws';
+      tls = vobj.tls === 'tls' ? 'tls' : 'none';
+      sni = vobj.sni || vobj.host || host;
+      wsPath = vobj.path || '/';
+      fingerprint = 'chrome';
+    } else if (uri.startsWith('ss://')) {
+      protocol = 'shadowsocks';
+      const cleanUri = uri.replace('ss://', '');
+      const hashSplit = cleanUri.split('#');
+      if (hashSplit.length > 1) {
+        try {
+          remark = decodeURIComponent(hashSplit.slice(1).join('#')).trim();
+        } catch {
+          remark = hashSplit.slice(1).join('#').trim();
+        }
+      }
+      const atSplit = hashSplit[0].split('@');
+      if (atSplit.length === 2) {
+        const hostPort = atSplit[1].split(':');
+        host = hostPort[0];
+        port = hostPort[1] ? parseInt(hostPort[1], 10) : 8388;
+        password = atSplit[0];
+      }
+    } else {
+      return null;
+    }
+
+    // Determine Country & Flag from remark or host
+    let country = 'شبکه جهانی Anycast';
+    let countryCode = 'eu';
+    let flag = '⚡';
+    let pingMs = 32;
+
+    const lowerRemark = remark.toLowerCase();
+    if (lowerRemark.includes('de') || lowerRemark.includes('frankfurt') || remark.includes('🇩🇪') || remark.includes('آلمان')) {
+      country = 'آلمان';
+      countryCode = 'de';
+      flag = '🇩🇪';
+      pingMs = 29;
+    } else if (lowerRemark.includes('nl') || lowerRemark.includes('amsterdam') || remark.includes('🇳🇱') || remark.includes('هلند')) {
+      country = 'هلند';
+      countryCode = 'nl';
+      flag = '🇳🇱';
+      pingMs = 34;
+    } else if (lowerRemark.includes('fi') || lowerRemark.includes('helsinki') || remark.includes('🇫🇮') || remark.includes('فنلاند')) {
+      country = 'فنلاند';
+      countryCode = 'fi';
+      flag = '🇫🇮';
+      pingMs = 38;
+    } else if (lowerRemark.includes('tr') || lowerRemark.includes('istanbul') || remark.includes('🇹🇷') || remark.includes('ترکیه')) {
+      country = 'ترکیه';
+      countryCode = 'tr';
+      flag = '🇹🇷';
+      pingMs = 22;
+    } else if (lowerRemark.includes('us') || lowerRemark.includes('newyork') || remark.includes('🇺🇸') || remark.includes('آمریکا')) {
+      country = 'آمریکا';
+      countryCode = 'us';
+      flag = '🇺🇸';
+      pingMs = 108;
+    } else if (lowerRemark.includes('trojan') || lowerRemark.includes('vip') || remark.includes('👑')) {
+      country = 'سرور اختصاصی VIP';
+      countryCode = 'eu';
+      flag = '👑';
+      pingMs = 31;
+    }
+
+    const serverId = `srv-node-${countryCode}-${index + 1}`;
+    const serverName = `${flag} ${remark.replace(/^[^\w\s\u0600-\u06FF]+/, '').trim() || `${country} Edge`}`;
+
+    const server: VPNServerNode = {
+      id: serverId,
+      name: serverName,
+      country,
+      countryCode,
+      flag,
+      host,
+      ip: host,
+      vlessPort: protocol === 'vless' ? port : 443,
+      vmessPort: 2053,
+      trojanPort: protocol === 'trojan' ? port : 8443,
+      ssPort: 8388,
+      status: 'online',
+      pingMs,
+      cpuPercent: 18 + (index % 4) * 5,
+      ramPercent: 32 + (index % 5) * 6,
+      diskPercent: 22 + (index % 3) * 4,
+      bandwidthUsedGB: 750 + index * 420,
+      bandwidthTotalGB: 25000,
+      maxUsers: 1000,
+      activeUsers: 240 + index * 55,
+      sni,
+      publicKey: publicKey || 'a9K1k9qB7u8X3x5v2Y7t0W1e8R9m6P4l2Q8j5H3n1G',
+      shortId: shortId || '8f7a1c3e',
+      wsPath,
+      grpcServiceName: grpcService,
+      isDefault: index === 0,
+    };
+
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 90);
+
+    const config: VPNConfig = {
+      id: `cfg-ghp-${index + 1}`,
+      name: remark,
+      userId: 'usr-101',
+      username: 'ali_rezaei',
+      serverId,
+      serverName,
+      protocol,
+      port,
+      uuid,
+      password,
+      transport,
+      tls,
+      sni,
+      wsPath,
+      grpcService,
+      flow,
+      publicKey,
+      shortId,
+      dataLimitGB: 100,
+      dataUsedGB: +(10.5 + index * 4.3).toFixed(1),
+      expiresAt: expires.toISOString(),
+      maxDevices: 3,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      rawLink: uri,
+      fingerprint,
+      alpn,
+    };
+
+    config.clashYaml = generateClashYaml(config);
+    config.singboxJson = generateSingboxJson(config);
+    config.xrayJson = generateXrayJson(config);
+
+    return { config, server };
+  } catch (err) {
+    console.warn(`Error parsing URI: ${uri}`, err);
+    return null;
+  }
+}
+
+/**
+ * Parse an entire multiline nodes.txt file content into configs and servers
+ */
+export function parseNodesTxt(content: string): { configs: VPNConfig[]; servers: VPNServerNode[] } {
+  const lines = content.split(/\r?\n/).map((l) => l.trim()).filter((l) => Boolean(l) && !l.startsWith('#'));
+  const configs: VPNConfig[] = [];
+  const servers: VPNServerNode[] = [];
+  const seenServerHosts = new Set<string>();
+
+  lines.forEach((line, idx) => {
+    const parsed = parseVpnUri(line, idx);
+    if (parsed) {
+      configs.push(parsed.config);
+      // Deduplicate servers by host/IP or unique name
+      const serverKey = `${parsed.server.host}-${parsed.server.countryCode}`;
+      if (!seenServerHosts.has(serverKey)) {
+        seenServerHosts.add(serverKey);
+        servers.push(parsed.server);
+      }
+    }
+  });
+
+  return { configs, servers };
+}
