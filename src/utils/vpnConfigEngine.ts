@@ -58,6 +58,8 @@ export function buildVlessLink(params: {
   if (params.tls === 'tls') {
     urlParams.set('security', 'tls');
     urlParams.set('sni', params.sni);
+    urlParams.set('fp', 'chrome');
+    urlParams.set('alpn', 'h2,http/1.1');
     if (params.flow && params.flow !== 'none') {
       urlParams.set('flow', params.flow);
     }
@@ -143,6 +145,8 @@ export function buildTrojanLink(params: {
   const urlParams = new URLSearchParams();
   urlParams.set('security', params.tls !== 'none' ? 'tls' : 'none');
   urlParams.set('sni', params.sni);
+  urlParams.set('fp', 'chrome');
+  urlParams.set('alpn', 'h2,http/1.1');
   urlParams.set('type', params.transport === 'ws' ? 'ws' : params.transport === 'grpc' ? 'grpc' : 'tcp');
 
   if (params.transport === 'ws') {

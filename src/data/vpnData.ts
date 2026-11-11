@@ -280,7 +280,7 @@ export const initialVPNConfigs: VPNConfig[] = [
     status: 'active',
     createdAt: '2026-10-10T12:00:00.000Z',
     rawLink:
-      'vless://9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d@104.16.132.229:443?encryption=none&security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F#%F0%9F%87%A9%F0%9F%87%AA%20MAHI-JOOVOON%20%7C%20DE%20-%20Frankfurt%20Edge%20%E2%9A%A1',
+      'vless://9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d@104.16.132.229:443?encryption=none&security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%A9%F0%9F%87%AA%20MAHI-JOOVOON%20%7C%20DE%20-%20Frankfurt%20Edge%20%E2%9A%A1',
   },
   {
     id: 'cfg-002',
@@ -304,7 +304,7 @@ export const initialVPNConfigs: VPNConfig[] = [
     status: 'active',
     createdAt: '2026-10-10T12:05:00.000Z',
     rawLink:
-      'vless://9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d@172.67.182.196:443?encryption=none&security=tls&sni=cloudflare.com&type=ws&host=cloudflare.com&path=%2F#%F0%9F%87%B3%F0%9F%87%B1%20MAHI-JOOVOON%20%7C%20NL%20-%20Amsterdam%20CDN%20%E2%9A%A1',
+      'vless://9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d@172.67.182.196:443?encryption=none&security=tls&sni=cloudflare.com&type=ws&host=cloudflare.com&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%B3%F0%9F%87%B1%20MAHI-JOOVOON%20%7C%20NL%20-%20Amsterdam%20CDN%20%E2%9A%A1',
   },
   {
     id: 'cfg-003',
@@ -328,7 +328,7 @@ export const initialVPNConfigs: VPNConfig[] = [
     status: 'active',
     createdAt: '2026-10-20T14:30:00.000Z',
     rawLink:
-      'vless://4f2a8c1e-9d3b-47e2-8b1a-5c9d3e7f1a2b@104.19.241.93:443?encryption=none&security=tls&sni=zula.ir&type=ws&host=zula.ir&path=%2F#%F0%9F%87%AB%F0%9F%87%AE%20MAHI-JOOVOON%20%7C%20FI%20-%20Helsinki%20Clean%20%E2%9A%A1',
+      'vless://4f2a8c1e-9d3b-47e2-8b1a-5c9d3e7f1a2b@104.19.241.93:443?encryption=none&security=tls&sni=zula.ir&type=ws&host=zula.ir&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%AB%F0%9F%87%AE%20MAHI-JOOVOON%20%7C%20FI%20-%20Helsinki%20Clean%20%E2%9A%A1',
   },
   {
     id: 'cfg-004',
@@ -353,7 +353,7 @@ export const initialVPNConfigs: VPNConfig[] = [
     status: 'active',
     createdAt: '2026-10-20T14:35:00.000Z',
     rawLink:
-      'trojan://MahiSecretTrojanPass98!@162.159.136.234:443?security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F#%F0%9F%87%B9%F0%9F%87%B7%20MAHI-JOOVOON%20%7C%20TR%20-%20Istanbul%20Fast%20%E2%9A%A1',
+      'trojan://MahiSecretTrojanPass98!@162.159.136.234:443?security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%B9%F0%9F%87%B7%20MAHI-JOOVOON%20%7C%20TR%20-%20Istanbul%20Fast%20%E2%9A%A1',
   },
   {
     id: 'cfg-005',
@@ -377,7 +377,7 @@ export const initialVPNConfigs: VPNConfig[] = [
     status: 'active',
     createdAt: '2026-10-25T16:10:00.000Z',
     rawLink:
-      'vless://9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d@104.18.2.161:443?encryption=none&security=tls&sni=apple.com&type=ws&host=apple.com&path=%2F#%F0%9F%87%BA%F0%9F%87%B8%20MAHI-JOOVOON%20%7C%20US%20-%20NewYork%20Fast%20%E2%9A%A1',
+      'vless://9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d@104.18.2.161:443?encryption=none&security=tls&sni=apple.com&type=ws&host=apple.com&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%87%BA%F0%9F%87%B8%20MAHI-JOOVOON%20%7C%20US%20-%20NewYork%20Fast%20%E2%9A%A1',
   },
   {
     id: 'cfg-006',
@@ -402,7 +402,7 @@ export const initialVPNConfigs: VPNConfig[] = [
     status: 'active',
     createdAt: '2026-10-28T09:00:00.000Z',
     rawLink:
-      'trojan://mahi_vip_pass_2026@104.16.132.229:443?security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F#%F0%9F%94%B0%20MAHI-JOOVOON%20%7C%20Trojan%20VIP%20%E2%9A%A1',
+      'trojan://mahi_vip_pass_2026@104.16.132.229:443?security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F&fp=chrome&alpn=h2%2Chttp%2F1.1#%F0%9F%94%B0%20MAHI-JOOVOON%20%7C%20Trojan%20VIP%20%E2%9A%A1',
   },
 ];
 
