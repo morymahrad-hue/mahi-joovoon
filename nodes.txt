@@ -1,0 +1,6 @@
+vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@104.16.132.229:443?encryption=none&security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F#%F0%9F%87%A9%F0%9F%87%AA%20MAHI-JOOVOON%20%7C%20DE-Frankfurt%20Edge%20%E2%9A%A1
+vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@172.67.182.196:443?encryption=none&security=tls&sni=cloudflare.com&type=ws&host=cloudflare.com&path=%2F#%F0%9F%87%B3%F0%9F%87%B1%20MAHI-JOOVOON%20%7C%20NL-Amsterdam%20CDN%20%E2%9A%A1
+vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@104.19.241.93:443?encryption=none&security=tls&sni=zula.ir&type=ws&host=zula.ir&path=%2F#%F0%9F%87%AB%F0%9F%87%AE%20MAHI-JOOVOON%20%7C%20FI-Helsinki%20Clean%20%E2%9A%A1
+vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@162.159.136.234:443?encryption=none&security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F#%F0%9F%87%B9%F0%9F%87%B7%20MAHI-JOOVOON%20%7C%20TR-Istanbul%20Game%20%E2%9A%A1
+vless://b74d9e2a-14f0-4662-89c5-7b5680c2f109@104.18.2.161:443?encryption=none&security=tls&sni=apple.com&type=ws&host=apple.com&path=%2F#%F0%9F%87%BA%F0%9F%87%B8%20MAHI-JOOVOON%20%7C%20US-NewYork%20Stream%20%E2%9A%A1
+trojan://mahi_vip_pass_2026@104.16.132.229:443?security=tls&sni=speedtest.net&type=ws&host=speedtest.net&path=%2F#%F0%9F%94%B0%20MAHI-JOOVOON%20%7C%20Trojan%20VIP%20%E2%9A%A1
